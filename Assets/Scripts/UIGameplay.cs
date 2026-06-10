@@ -7,30 +7,75 @@ public class UIGameplay : MonoBehaviour
     [SerializeField] private int sceneIndex = 0;
 
     [Header("Gameplay Buttons")]
-    public Button buttonResume;
-    public Button buttonPause;
-    public Button buttonMenu;
+    [SerializeField] private Button buttonResume;
+    [SerializeField] private Button buttonPause;
+    [SerializeField] private Button buttonMenu;
 
     private void Start()
     {
-        buttonMenu.onClick.AddListener(() => GameManager.Instance.ChangeScene(sceneIndex));
-        buttonPause.onClick.AddListener(HandleButtonClick);
-        buttonResume.onClick.AddListener(HandleButtonClick);
+        if (buttonMenu != null)
+        {
+            buttonMenu.onClick.AddListener(() =>
+            {
+                GameManager.Instance.ChangeScene(sceneIndex);
+            });
+        }
+
+        if (buttonPause != null)
+        {
+            buttonPause.onClick.AddListener(HandlePauseResume);
+        }
+
+        if (buttonResume != null)
+        {
+            buttonResume.onClick.AddListener(HandlePauseResume);
+        }
+
+        UpdatePauseButtons();
     }
 
-    private void HandleButtonClick()
+    private void HandlePauseResume()
     {
         if (GameManager.Instance.isPaused)
         {
             GameManager.Instance.Resume();
-            buttonPause.gameObject.SetActive(true);
-            buttonResume.gameObject.SetActive(false);
         }
         else
         {
             GameManager.Instance.Pause();
-            buttonPause.gameObject.SetActive(false);
-            buttonResume.gameObject.SetActive(true);
+        }
+
+        UpdatePauseButtons();
+    }
+
+    private void UpdatePauseButtons()
+    {
+        if (buttonPause != null)
+        {
+            buttonPause.gameObject.SetActive(!GameManager.Instance.isPaused);
+        }
+
+        if (buttonResume != null)
+        {
+            buttonResume.gameObject.SetActive(GameManager.Instance.isPaused);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (buttonMenu != null)
+        {
+            buttonMenu.onClick.RemoveAllListeners();
+        }
+
+        if (buttonPause != null)
+        {
+            buttonPause.onClick.RemoveAllListeners();
+        }
+
+        if (buttonResume != null)
+        {
+            buttonResume.onClick.RemoveAllListeners();
         }
     }
 }

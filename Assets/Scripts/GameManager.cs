@@ -1,49 +1,129 @@
-using System.Collections;
-using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using System.IO;
 
 public class GameManager : MonoBehaviour
 {
-    #region Game Manager
     public static GameManager Instance;
-    void Awake()
+
+    [Header("UI")]
+    [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private TextMeshProUGUI highScoreText;
+
+    private int score = 0;
+    private int highScore = 0;
+
+    public bool isPaused { get; private set; }
+
+    private void Awake()
     {
+        // Singleton
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
         else
         {
             Destroy(gameObject);
+            return;
         }
     }
 
-    public void GameManagerCheck()
+    private void Start()
     {
-        //Debug.Log("GameManager Check");
+        LoadHighScore();
+
+        UpdateScoreUI();
     }
+
+    #region Score System
+
+    public void AddScore(int points)
+    {
+        score += points;
+
+        UpdateScoreUI();
+
+        // Cek apakah score saat ini melebihi high score
+        if (score > highScore)
+        {
+            highScore = score;
+
+            SaveHighScore();
+
+            UpdateHighScoreUI();
+        }
+    }
+
+    private void UpdateScoreUI()
+    {
+        if (scoreText != null)
+        {
+            scoreText.text = "Score: " + score;
+        }
+    }
+
+    private void UpdateHighScoreUI()
+    {
+        if (highScoreText != null)
+        {
+            highScoreText.text = "High Score: " + highScore;
+        }
+    }
+
     #endregion
 
-    #region Game Management
-    public bool isPaused;
-    public void ChangeScene(int sceneIndex)
+    #region Save & Load System
+
+    private void SaveHighScore()
     {
-        SceneManager.LoadScene(sceneIndex);
+        PlayerPrefs.SetInt("HighScore", highScore);
+        PlayerPrefs.Save();
     }
+
+    private void LoadHighScore()
+    {
+        highScore = PlayerPrefs.GetInt("HighScore", 0);
+
+        UpdateHighScoreUI();
+    }
+
+    public void ResetSaveData()
+    {
+        PlayerPrefs.DeleteKey("HighScore");
+
+        highScore = 0;
+
+        UpdateHighScoreUI();
+    }
+
+    #endregion
+
+    #region Pause System
 
     public void Pause()
     {
-        Time.timeScale = 0f;
         isPaused = true;
+        Time.timeScale = 0f;
     }
 
     public void Resume()
     {
+        isPaused = false;
+        Time.timeScale = 1f;
+    }
+
+    #endregion
+
+    #region Scene Management
+
+    public void ChangeScene(int sceneIndex)
+    {
         Time.timeScale = 1f;
         isPaused = false;
+
+        SceneManager.LoadScene(sceneIndex);
     }
+
     #endregion
 }

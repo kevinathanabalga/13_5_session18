@@ -11,6 +11,7 @@ public class PlayerMovement : MonoBehaviour
 
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
+    private Animator animator;
 
     private float horizontalInput;
     private bool jumpRequested;
@@ -19,11 +20,14 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        animator = GetComponent<Animator>();
     }
 
     void Update()
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
+
+        animator.SetFloat("Speed", Mathf.Abs(horizontalInput));
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
@@ -62,8 +66,20 @@ public class PlayerMovement : MonoBehaviour
     private void SpriteFlip(float horizontalInput)
     {
         if (horizontalInput < 0)
-            spriteRenderer.flipX = false;
-        else if (horizontalInput > 0)
             spriteRenderer.flipX = true;
+        else if (horizontalInput > 0)
+            spriteRenderer.flipX = false;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (groundCheck == null)
+            return;
+
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(
+            groundCheck.position,
+            groundCheckRadius
+        );
     }
 }

@@ -6,7 +6,6 @@ public class PlayerRespawn : MonoBehaviour
 
     void Start()
     {
-        // Set initial respawn point (can be updated later)
         respawnPoint = GameObject.Find("RespawnPoint").transform.position;
     }
 
@@ -26,7 +25,6 @@ public class PlayerRespawn : MonoBehaviour
     private void Respawn()
     {
         transform.position = respawnPoint;
-        // Optional: reset velocity if using Rigidbody2D
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
         if (rb != null)
         {
