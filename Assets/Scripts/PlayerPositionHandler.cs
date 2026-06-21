@@ -1,52 +1,154 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerPositionHandler : MonoBehaviour
 {
-    [SerializeField] Vector2 playerCurrentPosition;
-    [SerializeField] Vector2 currentCheckpointPosition;
-    public TransformData playerPositionData;
-    private TriggerEvent playerTriggerEvent;
+    [Header("Player Position")]
+    [SerializeField] private Vector2 playerCurrentPosition;
 
-    void Start()
+    [SerializeField] private Vector2 currentCheckpointPosition;
+
+    [Header("Save System")]
+    [SerializeField] private TransformData playerPositionData;
+
+    private void Start()
     {
-        playerTriggerEvent = GetComponent<TriggerEvent>();
+        if (playerPositionData == null)
+        {
+            Debug.LogError(
+                "TransformData belum diassign pada PlayerPositionHandler!"
+            );
+
+            return;
+        }
+
+        LoadPosition();
     }
 
-    public void OnCheckpoint(GameObject col)
-    {
-        Vector2 newCheckpointPosition = col.transform.position;
-        currentCheckpointPosition = newCheckpointPosition;
-        SavePosition(currentCheckpointPosition);
-        CheckpointWallActive(col);
+    #region Checkpoint System
 
-    }
-    public void CheckpointWallActive(GameObject wall)
+    public void OnCheckpoint(GameObject checkpoint)
     {
-        wall.gameObject.transform.GetChild(0).gameObject.SetActive(true);
+        Vector2 newCheckpointPosition =
+            checkpoint.transform.position;
+
+        currentCheckpointPosition =
+            newCheckpointPosition;
+
+        SavePosition(
+            currentCheckpointPosition
+        );
+
+        CheckpointWallActive(
+            checkpoint
+        );
+
+        Debug.Log(
+            "Checkpoint Saved"
+        );
     }
+
+    private void CheckpointWallActive(
+        GameObject checkpoint)
+    {
+        if (checkpoint.transform.childCount > 0)
+        {
+            checkpoint.transform
+                .GetChild(0)
+                .gameObject
+                .SetActive(true);
+        }
+    }
+
+    #endregion
+
+    #region Trap / Respawn System
 
     public void OnTrap()
     {
-        ChangePlayerPosition(currentCheckpointPosition);
+        LoadPosition();
+
+        Rigidbody2D rb =
+            GetComponent<Rigidbody2D>();
+
+        if (rb != null)
+        {
+            rb.linearVelocity =
+                Vector2.zero;
+        }
+
+        Debug.Log(
+            "Player Respawned"
+        );
     }
 
     public void OnFinish()
     {
         playerPositionData.ResetData();
 
+        currentCheckpointPosition =
+            Vector2.zero;
+
+        playerCurrentPosition =
+            Vector2.zero;
+
+        Debug.Log(
+            "Position Data Reset"
+        );
     }
-    private void ChangePlayerPosition(Vector2 newPosition)
+
+    #endregion
+
+    #region Save & Load Position
+
+    public void SavePosition(
+        Vector2 newPosition)
     {
-        transform.position = newPosition;
+        currentCheckpointPosition =
+            newPosition;
+
+        playerPositionData.SetPosition(
+            newPosition
+        );
+
+        Debug.Log(
+            "Position Saved: "
+            + newPosition
+        );
     }
-    private void LoadPosition()
+
+    public void LoadPosition()
     {
-        playerCurrentPosition = playerPositionData.position;
+        if (playerPositionData == null)
+        {
+            return;
+        }
+
+        playerCurrentPosition =
+            playerPositionData.GetPosition();
+
+        // Jangan load jika belum pernah checkpoint
+        if (playerCurrentPosition ==
+            Vector2.zero)
+        {
+            return;
+        }
+
+        ChangePlayerPosition(
+            playerCurrentPosition
+        );
+
+        Debug.Log(
+            "Position Loaded: "
+            + playerCurrentPosition
+        );
     }
-    private void SavePosition(Vector2 newPosition)
+
+    private void ChangePlayerPosition(
+        Vector2 newPosition)
     {
-        playerPositionData.position = newPosition;
+        transform.position =
+            newPosition;
     }
+
+    #endregion
 }

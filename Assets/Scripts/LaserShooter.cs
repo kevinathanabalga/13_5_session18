@@ -14,13 +14,38 @@ public class LaserShooter : MonoBehaviour
 
     [SerializeField] private LayerMask targetLayer;
 
+    private void Awake()
+    {
+        // Auto get LineRenderer kalau belum di-assign
+        if (lineRenderer == null)
+        {
+            lineRenderer = GetComponent<LineRenderer>();
+        }
+    }
+
     private void Start()
     {
-        lineRenderer.enabled = false;
+        if (lineRenderer != null)
+        {
+            lineRenderer.enabled = false;
+
+            lineRenderer.positionCount = 2;
+        }
+        else
+        {
+            Debug.LogError("LineRenderer tidak ditemukan!");
+        }
     }
 
     private void Update()
     {
+        // Jangan bisa menembak saat pause
+        if (GameManager.Instance != null &&
+            GameManager.Instance.isPaused)
+        {
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.F))
         {
             ShootLaser();
@@ -29,7 +54,23 @@ public class LaserShooter : MonoBehaviour
 
     private void ShootLaser()
     {
-        Vector2 direction = transform.right;
+        if (lineRenderer == null || firePoint == null)
+        {
+            Debug.LogError("LaserShooter reference missing!");
+
+            return;
+        }
+
+        // Arah tembakan
+        Vector2 direction = firePoint.right;
+
+        // Debug ray di Scene View
+        Debug.DrawRay(
+            firePoint.position,
+            direction * laserDistance,
+            Color.red,
+            1f
+        );
 
         RaycastHit2D hit =
             Physics2D.Raycast(
@@ -45,17 +86,22 @@ public class LaserShooter : MonoBehaviour
         {
             endPosition = hit.point;
 
-            Debug.Log("Laser Hit: "
-                      + hit.collider.name);
+            Debug.Log(
+                "Laser Hit: " +
+                hit.collider.name
+            );
 
-            Destroy(hit.collider.gameObject);
+            // Destroy enemy saja
+            if (hit.collider.CompareTag("KillZone"))
+            {
+                Destroy(hit.collider.gameObject);
+            }
         }
         else
         {
             endPosition =
                 firePoint.position +
-                (Vector3)direction *
-                laserDistance;
+                (Vector3)direction * laserDistance;
         }
 
         StartCoroutine(
@@ -76,8 +122,10 @@ public class LaserShooter : MonoBehaviour
 
         lineRenderer.SetPosition(1, end);
 
-        yield return new WaitForSeconds(
-            laserDuration);
+        // realtime supaya tetap mati walau pause
+        yield return new WaitForSecondsRealtime(
+            laserDuration
+        );
 
         lineRenderer.enabled = false;
     }

@@ -13,14 +13,18 @@ public class GameManager : MonoBehaviour
     private int score = 0;
     private int highScore = 0;
 
+    public int CurrentScore => score;
+    public int CurrentHighScore => highScore;
+
     public bool isPaused { get; private set; }
 
     private void Awake()
     {
-        // Singleton
+        // Singleton + Persistent Across Scenes
         if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -29,11 +33,62 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
     private void Start()
     {
+        FindUIReferences();
+
         LoadHighScore();
 
         UpdateScoreUI();
+
+        UpdateHighScoreUI();
+    }
+
+    private void OnSceneLoaded(
+        Scene scene,
+        LoadSceneMode mode)
+    {
+        FindUIReferences();
+
+        UpdateScoreUI();
+
+        UpdateHighScoreUI();
+    }
+
+    private void FindUIReferences()
+    {
+        GameObject scoreObj =
+            GameObject.Find("ScoreText");
+
+        if (scoreObj != null)
+        {
+            scoreText =
+                scoreObj.GetComponent<TextMeshProUGUI>();
+        }
+
+        GameObject highScoreObj =
+            GameObject.Find("HighScoreText");
+
+        if (highScoreObj != null)
+        {
+            highScoreText =
+                highScoreObj.GetComponent<TextMeshProUGUI>();
+        }
     }
 
     #region Score System
@@ -44,7 +99,6 @@ public class GameManager : MonoBehaviour
 
         UpdateScoreUI();
 
-        // Cek apakah score saat ini melebihi high score
         if (score > highScore)
         {
             highScore = score;
@@ -53,13 +107,23 @@ public class GameManager : MonoBehaviour
 
             UpdateHighScoreUI();
         }
+
+        Debug.Log("Current Score: " + score);
+    }
+
+    public void ResetScore()
+    {
+        score = 0;
+
+        UpdateScoreUI();
     }
 
     private void UpdateScoreUI()
     {
         if (scoreText != null)
         {
-            scoreText.text = "Score: " + score;
+            scoreText.text =
+                "Score: " + score;
         }
     }
 
@@ -67,7 +131,8 @@ public class GameManager : MonoBehaviour
     {
         if (highScoreText != null)
         {
-            highScoreText.text = "High Score: " + highScore;
+            highScoreText.text =
+                "High Score: " + highScore;
         }
     }
 
@@ -77,24 +142,45 @@ public class GameManager : MonoBehaviour
 
     private void SaveHighScore()
     {
-        PlayerPrefs.SetInt("HighScore", highScore);
+        PlayerPrefs.SetInt(
+            "HighScore",
+            highScore
+        );
+
         PlayerPrefs.Save();
+
+        Debug.Log(
+            "High Score Saved: "
+            + highScore
+        );
     }
 
     private void LoadHighScore()
     {
-        highScore = PlayerPrefs.GetInt("HighScore", 0);
+        highScore =
+            PlayerPrefs.GetInt(
+                "HighScore",
+                0
+            );
 
         UpdateHighScoreUI();
     }
 
     public void ResetSaveData()
     {
-        PlayerPrefs.DeleteKey("HighScore");
+        PlayerPrefs.DeleteKey(
+            "HighScore"
+        );
+
+        PlayerPrefs.Save();
 
         highScore = 0;
 
         UpdateHighScoreUI();
+
+        Debug.Log(
+            "High Score Reset"
+        );
     }
 
     #endregion
@@ -103,26 +189,63 @@ public class GameManager : MonoBehaviour
 
     public void Pause()
     {
+        if (isPaused)
+            return;
+
         isPaused = true;
+
         Time.timeScale = 0f;
     }
 
     public void Resume()
     {
+        if (!isPaused)
+            return;
+
         isPaused = false;
+
         Time.timeScale = 1f;
+    }
+
+    public void TogglePause()
+    {
+        if (isPaused)
+        {
+            Resume();
+        }
+        else
+        {
+            Pause();
+        }
     }
 
     #endregion
 
     #region Scene Management
 
-    public void ChangeScene(int sceneIndex)
+    public void ChangeScene(
+        int sceneIndex)
     {
         Time.timeScale = 1f;
+
         isPaused = false;
 
-        SceneManager.LoadScene(sceneIndex);
+        SceneManager.LoadScene(
+            sceneIndex
+        );
+    }
+
+    public void RestartCurrentScene()
+    {
+        Time.timeScale = 1f;
+
+        isPaused = false;
+
+        SceneManager.LoadScene(
+            SceneManager
+                .GetActiveScene()
+                .buildIndex
+        );
     }
 
     #endregion

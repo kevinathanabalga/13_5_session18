@@ -2,14 +2,43 @@ using UnityEngine;
 
 public class PlayerRespawn : MonoBehaviour
 {
+    [Header("Default Respawn")]
+    [SerializeField] private Transform defaultRespawnPoint;
+
     private Vector3 respawnPoint;
 
-    void Start()
+    private PlayerPositionHandler positionHandler;
+    private Rigidbody2D rb;
+
+    private void Awake()
     {
-        respawnPoint = GameObject.Find("RespawnPoint").transform.position;
+        positionHandler =
+            GetComponent<PlayerPositionHandler>();
+
+        rb =
+            GetComponent<Rigidbody2D>();
     }
 
-    void OnTriggerEnter2D(Collider2D other)
+    private void Start()
+    {
+        if (defaultRespawnPoint != null)
+        {
+            respawnPoint =
+                defaultRespawnPoint.position;
+        }
+        else
+        {
+            Debug.LogWarning(
+                "Default Respawn Point belum diassign!"
+            );
+
+            respawnPoint =
+                transform.position;
+        }
+    }
+
+    private void OnTriggerEnter2D(
+        Collider2D other)
     {
         if (other.CompareTag("KillZone"))
         {
@@ -17,18 +46,45 @@ public class PlayerRespawn : MonoBehaviour
         }
     }
 
-    public void SetRespawnPoint(Vector3 newPoint)
+    public void SetRespawnPoint(
+        Vector3 newPoint)
     {
         respawnPoint = newPoint;
     }
 
-    private void Respawn()
+    public void Respawn()
     {
-        transform.position = respawnPoint;
-        Rigidbody2D rb = GetComponent<Rigidbody2D>();
+        bool loadedCheckpoint = false;
+
+        if (positionHandler != null)
+        {
+            Vector3 beforePosition =
+                transform.position;
+
+            positionHandler.LoadPosition();
+
+            loadedCheckpoint =
+                transform.position != beforePosition;
+        }
+
+        // Fallback jika belum ada checkpoint
+        if (!loadedCheckpoint)
+        {
+            transform.position =
+                respawnPoint;
+        }
+
         if (rb != null)
         {
-            rb.linearVelocity = Vector2.zero;
+            rb.linearVelocity =
+                Vector2.zero;
+
+            rb.angularVelocity =
+                0f;
         }
+
+        Debug.Log(
+            "Player Respawned"
+        );
     }
 }
